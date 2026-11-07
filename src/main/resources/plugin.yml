@@ -1,17 +1,19 @@
 name: XBedSync
 version: 1.0.1
 main: cn.xuanjian.xbedsync.XBedSync
-# 鐩爣杩愯鐜涓?PaperSpigot 1.8.8锛岃鐗堟湰涓嶈瘑鍒?api-version 瀛楁锛屾晠涓嶅～鍐欍€?author: XuanJian
-description: XBed 璧涗簨鏁版嵁閲囬泦鎻掍欢锛圔edWars1058 / PaperSpigot 1.8.8锛?load: POSTWORLD
+# 目标运行环境为 PaperSpigot 1.8.8，该版本不识别 api-version 字段，故不填写。
+author: XuanJian
+description: XBed 赛事数据采集插件（BedWars1058 / PaperSpigot 1.8.8）
+load: POSTWORLD
 depend:
   - BedWars1058
 commands:
   xbedsync:
-    description: XBedSync 鐘舵€佷笌閲嶅彂鍛戒护
+    description: XBedSync 状态与重发命令
     usage: /xbedsync <status|retry|ping>
     permission: xbedsync.admin
-    permission-message: 浣犳病鏈夋潈闄愪娇鐢ㄨ鍛戒护銆?permissions:
+    permission-message: 你没有权限使用该命令。
+permissions:
   xbedsync.admin:
-    description: XBedSync 绠＄悊鍛戒护鏉冮檺
+    description: XBedSync 管理命令权限
     default: op
-
