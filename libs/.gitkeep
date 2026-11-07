@@ -1,0 +1,6 @@
+# 本目录用于放置 BedWars1058 核心插件 jar（不提交到仓库）：
+#   libs/Bedwars-plugin-23.1.1.jar
+#
+# 存在时：Gradle 使用真实 jar 作为 compileOnly 依赖编译（最准确）。
+# 不存在时：自动回退到 src/bedwarsStub/java 下的 API 存根（仅用于公开 CI 构建）。
+# 详见 README.md「构建」章节。

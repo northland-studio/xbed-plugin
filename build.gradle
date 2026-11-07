@@ -1,0 +1,109 @@
+/*
+ * XBedSync —— XBed 赛事平台服务器数据采集插件（BedWars1058 / PaperSpigot 1.8.8）
+ *
+ * 构建说明：
+ *   - 使用 Spigot 1.8.8 API 作为 compileOnly 依赖（PaperSpigot 1.8.8 与 Spigot 1.8.8 API 二进制一致，
+ *     Paper 官方 Maven 仓库并不发布 1.8.8 的 paper-api，因此必须使用 org.spigotmc:spigot-api:1.8.8）。
+ *   - BedWars1058 为付费闭源插件，没有公开 Maven 仓库：
+ *       1) 若存在 libs/Bedwars-plugin-23.1.1.jar，则直接用真实 jar 编译（推荐，最准确）；
+ *       2) 若不存在（例如公开 GitHub 仓库的 CI），自动回退到 src/bedwarsStub/java 的最小 API 存根编译。
+ *     存根只参与编译、不会打进最终 jar；运行期始终使用真实 BedWars1058 插件。
+ *   - 目标字节码 Java 8，可运行在 Java 11 的 PaperSpigot 1.8.8 服务端上。
+ */
+plugins {
+    id 'java'
+}
+
+group = 'cn.xuanjian'
+version = '1.0.0'
+description = 'XBed tournament match data collector/reporter for BedWars1058'
+
+def bedwarsJar = file('libs/Bedwars-plugin-23.1.1.jar')
+def useRealBedWarsJar = bedwarsJar.exists()
+
+repositories {
+    // Spigot 1.8.8 API（snapshot 仓库）
+    maven { url = uri('https://hub.spigotmc.org/nexus/content/repositories/snapshots/') }
+    // PaperMC 仓库（备用，便于以后切换 paper-api）
+    maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
+    mavenCentral()
+}
+
+configurations {
+    // 仅供 bedwarsStub source set 编译使用的 classpath
+    bedwarsStubCompile
+}
+
+sourceSets {
+    // 最小 BedWars1058 API 存根（仅在缺少真实 jar 时用于编译）
+    bedwarsStub {
+        java {
+            srcDirs = ['src/bedwarsStub/java']
+        }
+    }
+}
+
+dependencies {
+    compileOnly 'org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT'
+
+    bedwarsStubCompile 'org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
+}
+
+sourceSets.bedwarsStub.compileClasspath = configurations.bedwarsStubCompile
+
+if (useRealBedWarsJar) {
+    dependencies {
+        compileOnly files(bedwarsJar)
+    }
+    logger.lifecycle("[XBedSync] 编译依赖：真实 BedWars1058 jar -> ${bedwarsJar}")
+} else {
+    dependencies {
+        compileOnly sourceSets.bedwarsStub.output
+    }
+    compileJava.dependsOn 'compileBedwarsStubJava'
+    logger.lifecycle('[XBedSync] 未找到 libs/Bedwars-plugin-23.1.1.jar，使用 src/bedwarsStub 下的 API 存根编译。')
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // 不使用 -Werror：不同 JDK 的告警差异不应阻塞构建
+    options.compilerArgs << '-Xlint:deprecation' << '-Xlint:unchecked'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.named('jar') {
+    archiveBaseName = 'XBedSync'
+    manifest {
+        attributes(
+                'Implementation-Title': 'XBedSync',
+                'Implementation-Version': project.version,
+                'Built-With-Java': System.getProperty('java.version')
+        )
+    }
+}
+
+// 构建完成后打印产物路径，方便 CI 日志排查
+tasks.register('printJarPath') {
+    doLast {
+        tasks.jar.get().archiveFile.get().asFile.with { f ->
+            println "[XBedSync] jar: ${f.absolutePath}"
+        }
+    }
+}
+build.dependsOn 'printJarPath'

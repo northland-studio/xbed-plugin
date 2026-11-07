@@ -1,0 +1,66 @@
+# ============================================================
+# XBedSync 配置文件
+# 目标环境：PaperSpigot 1.8.8 (协议 47) + BedWars1058 23.1.1
+#
+# 安全提示：
+#   - hmacSecret 只能通过服务器后台面板/密钥管理系统填写，不要提交到公开仓库；
+#   - 插件不会在日志中输出完整 secret；
+#   - 生产环境必须使用 https，http 仅允许 localhost/127.0.0.1 本地联调。
+# ============================================================
+
+# XBed 网站 API 根地址（不含末尾 /）。
+# 生产：https://xbed.xuanjian.top/api
+# 本地联调：http://127.0.0.1:3939/api
+apiBaseUrl: "https://xbed.xuanjian.top/api"
+
+# 服务器身份标识，必须与网站后台「服务器管理」中登记的 serverKey 一致。
+# S1 只有一台服务器，固定填 s1。
+serverKey: "s1"
+
+# HMAC-SHA256 共享密钥。必须与网站后台该 serverKey 对应的密钥一致。
+# 请改完后把本文件权限设为仅管理员可读。
+hmacSecret: ""
+
+# 赛季标识。仅用于日志与运维排查；当前上报契约 (/api/ingest/match) 不含 season 字段，
+# 网站根据 startedAt 归属赛季。（如后续契约新增字段再扩展。）
+season: "S1"
+
+# 本地持久化队列目录（相对插件数据目录，或填绝对路径）。
+# 每场比赛一个 JSON 文件，原子写；上报成功后才删除。
+queueDir: "queue"
+
+# 允许采集的比赛模式（BedWars1058 竞技场配置中的 group 字段，如 4v4v4v4 / Solo / Doubles）。
+# 留空 [] 表示不限制。示例：["4v4v4v4", "3v3v3v3"]
+modeAllowlist: []
+
+# 允许采集的竞技场名称（BedWars1058 arenas 配置文件名，如 castle / cave）。
+# 留空 [] 表示不限制。
+arenaAllowlist: []
+
+# 统计口径开关：
+#   preferArenaCounters: true 时，结束时优先采用 BedWars1058 单场计数器
+#     (IArena#getPlayerKills/getPlayerDeaths/getPlayerBedsDestroyed)；
+#     仅当计数器值大于事件累计值时采用（避免玩家下线导致计数丢失），否则用事件累计值。
+#   includeDespawnableKills: 是否把铁傀儡/蠹虫等召唤物的击杀计入 kills。
+#     注意：核心插件自身统计会记录这些击杀，此处默认 true 以保持与核心一致。
+stats:
+  preferArenaCounters: true
+  includeDespawnableKills: true
+
+# 上报重试策略（指数退避，单位秒）
+retry:
+  # 首次失败后等待秒数，之后 2x 递增
+  initialDelaySeconds: 1
+  # 退避上限（秒），默认 5 分钟
+  maxDelaySeconds: 300
+  # 单次 HTTP 连接/读取超时（秒）
+  httpTimeoutSeconds: 10
+  # 队列扫描间隔（秒），最小 1
+  scanIntervalSeconds: 1
+
+# 进行中比赛的本地快照间隔（秒）。用于服务器崩溃后仍能补报异常比赛。
+# 设为 0 关闭（不建议）。
+snapshotIntervalSeconds: 10
+
+# 调试日志：输出事件明细与统计口径对比，正式服建议 false。
+debug: false

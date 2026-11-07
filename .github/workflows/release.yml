@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '7.6.4'
+
+      - name: Prepare BedWars1058 API jar (optional)
+        env:
+          BEDWARS1058_JAR_BASE64: ${{ secrets.BEDWARS1058_JAR_BASE64 }}
+        run: |
+          mkdir -p libs
+          if [ -n "${BEDWARS1058_JAR_BASE64}" ]; then
+            echo "${BEDWARS1058_JAR_BASE64}" | base64 -d > libs/Bedwars-plugin-23.1.1.jar
+          else
+            echo "未配置 BEDWARS1058_JAR_BASE64，使用 src/bedwarsStub 的 API 存根编译。"
+          fi
+
+      - name: Gradle build
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Generate checksums
+        run: |
+          cd build/libs
+          sha256sum XBedSync-*.jar > sha256sums.txt
+          cat sha256sums.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: XBedSync ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            build/libs/XBedSync-*.jar
+            build/libs/sha256sums.txt
