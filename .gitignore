@@ -24,3 +24,5 @@ libs/*.jar
 !libs/.gitkeep
 *.log
 run/
+
+.artifacts/
