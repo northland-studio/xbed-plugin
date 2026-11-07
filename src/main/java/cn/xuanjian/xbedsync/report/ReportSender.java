@@ -36,6 +36,7 @@ import cn.xuanjian.xbedsync.config.PluginConfig;
 public final class ReportSender {
 
     private static final Pattern DUPLICATE_PATTERN = Pattern.compile("\"duplicate\"\\s*:\\s*true");
+    private static final Pattern OK_PATTERN = Pattern.compile("\"ok\"\\s*:\\s*true");
     private static final int MAX_RESPONSE_BYTES = 16 * 1024;
     private static final int MAX_RESPONSE_CHARS = 2048;
 
@@ -218,14 +219,18 @@ public final class ReportSender {
             }
 
             int code = connection.getResponseCode();
+            String contentType = connection.getContentType();
             InputStream stream = code >= 400 ? connection.getErrorStream() : connection.getInputStream();
             String response = read(stream);
             long elapsed = System.currentTimeMillis() - begin;
-            if (code >= 200 && code < 300) {
-                boolean duplicate = response != null && DUPLICATE_PATTERN.matcher(response).find();
+            boolean jsonResponse = contentType != null && contentType.toLowerCase(Locale.ROOT).contains("json");
+            boolean acknowledged = response != null && OK_PATTERN.matcher(response).find();
+            if (code >= 200 && code < 300 && jsonResponse && acknowledged) {
+                boolean duplicate = DUPLICATE_PATTERN.matcher(response).find();
                 return ReportResult.ok(code, duplicate, shorten(response), elapsed);
             }
-            return ReportResult.httpFailure(code, shorten(response), elapsed);
+            // 200 但不是 XBed 的 JSON 响应（例如反代/SPA 回退返回 HTML）→ 视为失败，保留队列重试
+            return ReportResult.httpFailure(code, "非预期响应(可能被反代/SPA 拦截): " + shorten(response), elapsed);
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - begin;
             String message = e.getClass().getSimpleName();

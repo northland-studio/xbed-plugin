@@ -1,41 +1,41 @@
-/*
- * XBedSync —— XBed 赛事平台服务器数据采集插件（BedWars1058 / PaperSpigot 1.8.8）
+﻿/*
+ * XBedSync 鈥斺€?XBed 璧涗簨骞冲彴鏈嶅姟鍣ㄦ暟鎹噰闆嗘彃浠讹紙BedWars1058 / PaperSpigot 1.8.8锛?
  *
- * 构建说明：
- *   - 使用 Spigot 1.8.8 API 作为 compileOnly 依赖（PaperSpigot 1.8.8 与 Spigot 1.8.8 API 二进制一致，
- *     Paper 官方 Maven 仓库并不发布 1.8.8 的 paper-api，因此必须使用 org.spigotmc:spigot-api:1.8.8）。
- *   - BedWars1058 为付费闭源插件，没有公开 Maven 仓库：
- *       1) 若存在 libs/Bedwars-plugin-23.1.1.jar，则直接用真实 jar 编译（推荐，最准确）；
- *       2) 若不存在（例如公开 GitHub 仓库的 CI），自动回退到 src/bedwarsStub/java 的最小 API 存根编译。
- *     存根只参与编译、不会打进最终 jar；运行期始终使用真实 BedWars1058 插件。
- *   - 目标字节码 Java 8，可运行在 Java 11 的 PaperSpigot 1.8.8 服务端上。
+ * 鏋勫缓璇存槑锛?
+ *   - 浣跨敤 Spigot 1.8.8 API 浣滀负 compileOnly 渚濊禆锛圥aperSpigot 1.8.8 涓?Spigot 1.8.8 API 浜岃繘鍒朵竴鑷达紝
+ *     Paper 瀹樻柟 Maven 浠撳簱骞朵笉鍙戝竷 1.8.8 鐨?paper-api锛屽洜姝ゅ繀椤讳娇鐢?org.spigotmc:spigot-api:1.8.8锛夈€?
+ *   - BedWars1058 涓轰粯璐归棴婧愭彃浠讹紝娌℃湁鍏紑 Maven 浠撳簱锛?
+ *       1) 鑻ュ瓨鍦?libs/Bedwars-plugin-23.1.1.jar锛屽垯鐩存帴鐢ㄧ湡瀹?jar 缂栬瘧锛堟帹鑽愶紝鏈€鍑嗙‘锛夛紱
+ *       2) 鑻ヤ笉瀛樺湪锛堜緥濡傚叕寮€ GitHub 浠撳簱鐨?CI锛夛紝鑷姩鍥為€€鍒?src/bedwarsStub/java 鐨勬渶灏?API 瀛樻牴缂栬瘧銆?
+ *     瀛樻牴鍙弬涓庣紪璇戙€佷笉浼氭墦杩涙渶缁?jar锛涜繍琛屾湡濮嬬粓浣跨敤鐪熷疄 BedWars1058 鎻掍欢銆?
+ *   - 鐩爣瀛楄妭鐮?Java 8锛屽彲杩愯鍦?Java 11 鐨?PaperSpigot 1.8.8 鏈嶅姟绔笂銆?
  */
 plugins {
     id 'java'
 }
 
 group = 'cn.xuanjian'
-version = '1.0.0'
+version = '1.0.1'
 description = 'XBed tournament match data collector/reporter for BedWars1058'
 
 def bedwarsJar = file('libs/Bedwars-plugin-23.1.1.jar')
 def useRealBedWarsJar = bedwarsJar.exists()
 
 repositories {
-    // Spigot 1.8.8 API（snapshot 仓库）
+    // Spigot 1.8.8 API锛坰napshot 浠撳簱锛?
     maven { url = uri('https://hub.spigotmc.org/nexus/content/repositories/snapshots/') }
-    // PaperMC 仓库（备用，便于以后切换 paper-api）
+    // PaperMC 浠撳簱锛堝鐢紝渚夸簬浠ュ悗鍒囨崲 paper-api锛?
     maven { url = uri('https://repo.papermc.io/repository/maven-public/') }
     mavenCentral()
 }
 
 configurations {
-    // 仅供 bedwarsStub source set 编译使用的 classpath
+    // 浠呬緵 bedwarsStub source set 缂栬瘧浣跨敤鐨?classpath
     bedwarsStubCompile
 }
 
 sourceSets {
-    // 最小 BedWars1058 API 存根（仅在缺少真实 jar 时用于编译）
+    // 鏈€灏?BedWars1058 API 瀛樻牴锛堜粎鍦ㄧ己灏戠湡瀹?jar 鏃剁敤浜庣紪璇戯級
     bedwarsStub {
         java {
             srcDirs = ['src/bedwarsStub/java']
@@ -59,13 +59,13 @@ if (useRealBedWarsJar) {
     dependencies {
         compileOnly files(bedwarsJar)
     }
-    logger.lifecycle("[XBedSync] 编译依赖：真实 BedWars1058 jar -> ${bedwarsJar}")
+    logger.lifecycle("[XBedSync] 缂栬瘧渚濊禆锛氱湡瀹?BedWars1058 jar -> ${bedwarsJar}")
 } else {
     dependencies {
         compileOnly sourceSets.bedwarsStub.output
     }
     compileJava.dependsOn 'compileBedwarsStubJava'
-    logger.lifecycle('[XBedSync] 未找到 libs/Bedwars-plugin-23.1.1.jar，使用 src/bedwarsStub 下的 API 存根编译。')
+    logger.lifecycle('[XBedSync] 鏈壘鍒?libs/Bedwars-plugin-23.1.1.jar锛屼娇鐢?src/bedwarsStub 涓嬬殑 API 瀛樻牴缂栬瘧銆?)
 }
 
 java {
@@ -75,7 +75,7 @@ java {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    // 不使用 -Werror：不同 JDK 的告警差异不应阻塞构建
+    // 涓嶄娇鐢?-Werror锛氫笉鍚?JDK 鐨勫憡璀﹀樊寮備笉搴旈樆濉炴瀯寤?
     options.compilerArgs << '-Xlint:deprecation' << '-Xlint:unchecked'
 }
 
@@ -98,7 +98,7 @@ tasks.named('jar') {
     }
 }
 
-// 构建完成后打印产物路径，方便 CI 日志排查
+// 鏋勫缓瀹屾垚鍚庢墦鍗颁骇鐗╄矾寰勶紝鏂逛究 CI 鏃ュ織鎺掓煡
 tasks.register('printJarPath') {
     doLast {
         tasks.jar.archiveFile.get().asFile.with { f ->
@@ -107,3 +107,4 @@ tasks.register('printJarPath') {
     }
 }
 build.dependsOn 'printJarPath'
+
